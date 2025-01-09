@@ -27,7 +27,49 @@ The different ports exposed:
 
 There are different approaches that could be taken:
 
-1. Write a separate MCP server that runs outside the docker image that proxies `docker exec` commands into the anthropic CU image.
-2. Embed and expose an MCP server into the docker image. Tricky because MCP servers are exposed via program stdin/stdout.
+1. Write a separate MCP server that runs outside the docker image that does a lot of `docker exec` commands into the anthropic CU image.
+2. Embed an MCP server into the docker image. Tricky because MCP servers are typically exposed via program stdin/stdout.
 
 Let's do approach #2 since I think it won't be too hard, and it can borrow from the anthropic published tool implementations.
+
+- `./src/*` contains a port of the three Anthropic-defined computer use tools to typescript, as described in [how to implement computer use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use#how-to-implement-computer-use).
+- `./Dockerfile` modifies the Anthropic computer use docker image to install this MCP server and run it as the default entrypoint.
+
+If you run
+
+```bash
+docker build -t computer-use .
+```
+
+And then edit Claude Desktop's config to have something like this:
+
+```
+{
+  "mcpServers": {
+    "computer-use": {
+      "command": "docker",
+      "args": [
+        "run",
+        "--rm",
+        "-i",
+        "--name",
+        "computer-use-mcp-server",
+        "-p",
+        "5900:5900",
+        "-p",
+        "8501:8501",
+        "-p",
+        "6080:6080",
+        "-p",
+        "8080:8080",
+        "computer-use"
+      ]
+    }
+  }
+}
+
+```
+
+Then you should be able to do computer use from Claude Desktop!
+
+You can open up [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html) to follow along with what it's doing. Claude doesn't clean up the docker container after closing Claude desktop so you will need to `docker kill computer-user-mcp-server`.
