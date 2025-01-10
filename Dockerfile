@@ -1,16 +1,19 @@
 FROM ghcr.io/anthropics/anthropic-quickstarts:computer-use-demo-latest
 
+USER root
+RUN add-apt-repository -y ppa:xtradeb/apps
+RUN apt update -y && apt install -y chromium
+
 # Switch to computeruse user and install bun
 USER computeruse
 RUN curl -fsSL https://bun.sh/install | bash -s "bun-v1.1.43"
 ENV PATH="/home/computeruse/.bun/bin:$PATH"
 
-# Create mcp-server directory
-RUN mkdir -p /home/computeruse/mcp-server
 
-# Copy MCP server code
-COPY --chown=computeruse:computeruse . /home/computeruse/mcp-server
-WORKDIR /home/computeruse/mcp-server
+# Copy our code
+RUN mkdir -p /home/computeruse/computer-use
+COPY --chown=computeruse:computeruse . /home/computeruse/computer-use
+WORKDIR /home/computeruse/computer-use
 
 # Install dependencies
 RUN bun install
@@ -23,14 +26,30 @@ set -e
 # riff on the anthropic entrypoint script that runs the MCP server
 # the MCP server transport is stdout/stdin, so we need to pipe all other logs to files
 
-./start_all.sh > /tmp/start_all_logs.txt 2>&1
-./novnc_startup.sh > /tmp/novnc_logs.txt 2>&1
+./start_all.sh >&2
 
-python http_server.py > /tmp/server_logs.txt 2>&1 &
+# Start Chromium with display :1 and remote debugging
+DISPLAY=:1 chromium \
+  --remote-debugging-port=9221 \
+  --no-sandbox \
+  --disable-dev-shm-usage \
+  --disable-gpu \
+  --disable-software-rasterizer \
+  --remote-allow-origins=* \
+  --no-zygote &
 
-STREAMLIT_SERVER_PORT=8501 python -m streamlit run computer_use_demo/streamlit.py > /tmp/streamlit_stdout.log 2>&1 &
+./novnc_startup.sh >&2
 
-cd /home/computeruse/mcp-server && bun run src/server.ts
+python http_server.py >&2 &
+
+STREAMLIT_SERVER_PORT=8501 python -m streamlit run computer_use_demo/streamlit.py >&2 &
+
+# the CDP/BiDi proxy
+cd /home/computeruse/computer-use && LISTEN_PORT=9222 FORWARD_PORT=9221 bun run src/proxy/proxy.ts
+
+# the mcp server
+cd /home/computeruse/computer-use && bun run src/server.ts
+
 EOL
 
 WORKDIR /home/computeruse

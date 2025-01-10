@@ -1,10 +1,10 @@
 # computer-use
 
-Explorations with Anthropic's computer use docker image and making it more tool-friendly.
+Explorations with Anthropic's computer use docker image and making it more tool and browser-automation friendly.
 
-## Running Anthropic's image
+## Running Anthropic's base image
 
-```
+```zsh
 export ANTHROPIC_API_KEY=%your_api_key%
 docker run \
     -e ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY \
@@ -32,8 +32,8 @@ There are different approaches that could be taken:
 
 Let's do approach #2 since I think it won't be too hard, and it can borrow from the anthropic published tool implementations.
 
-- `./src/*` contains a port of the three Anthropic-defined computer use tools to typescript, as described in [how to implement computer use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use#how-to-implement-computer-use).
-- `./Dockerfile` modifies the Anthropic computer use docker image to install this MCP server and run it as the default entrypoint.
+- `./src/server.ts` contains an MCP server that ports the three Anthropic-defined computer use tools to typescript, as described in [how to implement computer use](https://docs.anthropic.com/en/docs/build-with-claude/computer-use#how-to-implement-computer-use).
+- `./Dockerfile` modifies the Anthropic computer use docker image to install this MCP server and run it.
 
 If you run
 
@@ -43,7 +43,7 @@ docker build -t computer-use .
 
 And then edit Claude Desktop's config to have something like this:
 
-```
+```json
 {
   "mcpServers": {
     "computer-use": {
@@ -62,14 +62,40 @@ And then edit Claude Desktop's config to have something like this:
         "6080:6080",
         "-p",
         "8080:8080",
+        "-p",
+        "9222:9222",
         "computer-use"
       ]
     }
   }
 }
-
 ```
 
 Then you should be able to do computer use from Claude Desktop!
 
 You can open up [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html) to follow along with what it's doing. Claude doesn't clean up the docker container after closing Claude desktop so you will need to `docker kill computer-user-mcp-server`.
+
+# Make it speak Playwright
+
+Anthropic's CU image uses Firefox, which unfortunately is hard to get working with Playwright ([Playwright requires a patched version of firefox](https://stackoverflow.com/questions/75090385/running-playwright-with-the-local-firefox)).
+
+So we can try Chromium, which can be used by Playwright over CDP. The Dockerfile installs this as well and launches it on startup.
+We also run a proxy in the Docker image (`./src/proxy/proxy.ts`) that logs incoming requests and responses.
+
+Running the image locally now with the additional `9222` CDP/Webdriver Bidi port exposed:
+
+```zsh
+docker run --rm -i -p 5900:5900 -p 8501:8501 -p 6080:6080 -p 8080:8080 -p 9222:9222 --name computer-use-mcp-server computer-use
+```
+
+And then try running a test playwright script against it (while also peeking at the web VNC viewer):
+
+```
+$ tsx src/scripts/playwright.ts
+Connected to chromium
+Navigated to news.ycombinator.com
+Screenshot saved to playwright-screenshot.png
+Connection closed
+```
+
+Woo!
