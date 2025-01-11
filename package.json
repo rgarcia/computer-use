@@ -4,10 +4,13 @@
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/node": "^22.10.5",
+    "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.13",
     "playwright": "^1.49.1",
-    "@types/node": "^22.10.5",
-    "@types/uuid": "^10.0.0"
+    "puppeteer-core": "^24.0.0",
+    "tsx": "^4.19.2",
+    "webdriver": "^9.5.4"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"

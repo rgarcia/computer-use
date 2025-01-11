@@ -24,7 +24,7 @@ COPY --chmod=0755 <<'EOL' /home/computeruse/entrypoint.sh
 set -e
 
 # riff on the anthropic entrypoint script that runs the MCP server
-# the MCP server transport is stdout/stdin, so we need to pipe all other logs to files
+# the MCP server transport is stdout/stdin, so we need to pipe all other logs to stderr
 
 ./start_all.sh >&2
 
@@ -36,7 +36,7 @@ DISPLAY=:1 chromium \
   --disable-gpu \
   --disable-software-rasterizer \
   --remote-allow-origins=* \
-  --no-zygote &
+  --no-zygote >&2 &
 
 ./novnc_startup.sh >&2
 
@@ -45,11 +45,10 @@ python http_server.py >&2 &
 STREAMLIT_SERVER_PORT=8501 python -m streamlit run computer_use_demo/streamlit.py >&2 &
 
 # the CDP/BiDi proxy
-cd /home/computeruse/computer-use && LISTEN_PORT=9222 FORWARD_PORT=9221 bun run src/proxy/proxy.ts
+cd /home/computeruse/computer-use && LISTEN_PORT=9222 FORWARD_PORT=9221 bun run src/proxy/proxy.ts >&2 &
 
 # the mcp server
 cd /home/computeruse/computer-use && bun run src/server.ts
-
 EOL
 
 WORKDIR /home/computeruse

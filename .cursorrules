@@ -1,0 +1,13 @@
+When writing tests, make use of bun's Jest-like API for writing tests: `import { describe, expect, test } from "bun:test";`
+When invoking a shell command, use Bun's $ shell API:
+
+```ts
+import { $ } from "bun";
+
+await $`echo "Hello World!"`; // Hello World!
+await $`echo "Hello World!"`.quiet(); // No output
+const welcome = await $`echo "Hello World!"`.text(); // Capture the output
+const { stdout, stderr, exitCode } = await $`echo "Hello World!"`
+  .quiet()
+  .noThrow(); // Separate out stdout/stderr
+```

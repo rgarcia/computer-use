@@ -29,25 +29,12 @@ export async function start(config: ServerConfig): Promise<FastifyInstance> {
   });
   server.register(websocket);
 
-  // setup webdriver routes
+  server.log.info({ ...config }, "Starting proxy server");
   setupWebDriverRoutes(server, "localhost", config.forwardPort);
   setupCDPRoutes(server, "localhost", config.forwardPort);
-
   await server.listen({ host: "0.0.0.0", port: config.listenPort });
   return server;
 }
-
-start({
-  listenPort: process.env.LISTEN_PORT
-    ? parseInt(process.env.LISTEN_PORT)
-    : 9222,
-  forwardPort: process.env.FORWARD_PORT
-    ? parseInt(process.env.FORWARD_PORT)
-    : 9221,
-}).catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
 
 function once(fn: any) {
   let called = false;
@@ -139,20 +126,17 @@ export function setupWebDriverRoutes(
   driverPort: number
 ) {
   // The beginning of a webdriver interaction starts with a POST request to create a session
-  server.post(
-    "/webdriver/session",
-    async (req: FastifyRequest, reply: FastifyReply) => {
-      const response = await fetch(
-        `http://${driverHostname}:${driverPort}/session`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(req.body),
-        }
-      );
-      reply.status(response.status).send(await response.json());
-    }
-  );
+  server.post("/session", async (req: FastifyRequest, reply: FastifyReply) => {
+    const response = await fetch(
+      `http://${driverHostname}:${driverPort}/session`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req.body),
+      }
+    );
+    reply.status(response.status).send(await response.json());
+  });
 
   // the response to the POST request contains a session ID and a websocket URL to connect to
   // the client then establishes a websocket connection
@@ -160,7 +144,7 @@ export function setupWebDriverRoutes(
     server.get<{
       Params: { sessionId: string };
     }>(
-      "/webdriver/session/:sessionId",
+      "/session/:sessionId",
       { websocket: true },
       (socket: WebSocket, req: any) => {
         wsProxy(
@@ -170,10 +154,10 @@ export function setupWebDriverRoutes(
       }
     );
 
-    // additionally you can websocket directly to /webdriver/session without first creating session
+    // additionally you can websocket directly to /session without first creating session
     // this is how puppeteer does it
     server.get(
-      "/webdriver",
+      "/session",
       { websocket: true },
       (socket: WebSocket, req: any) => {
         wsProxy(server, `ws://${driverHostname}:${driverPort}/session`)(
@@ -187,7 +171,7 @@ export function setupWebDriverRoutes(
   // webdriver commands can appear as POST and DELETE requests to the session/:id/{operation} endpoint
   server.route<{ Params: { "*": string } }>({
     method: ["POST", "DELETE"],
-    url: "/webdriver/session/*",
+    url: "/session/*",
     handler: async (request, reply) => {
       try {
         const targetUrl = `http://${driverHostname}:${driverPort}/session/${request.params["*"]}`;
@@ -219,7 +203,7 @@ export function setupWebDriverRoutes(
       if (
         request.method === "DELETE" &&
         payload.length === 0 &&
-        request.url.startsWith("/webdriver/session")
+        request.url.startsWith("/session")
       ) {
         payload = "{}";
       }
