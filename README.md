@@ -23,7 +23,7 @@ The different ports exposed:
 - Streamlit for the prompt interface: http://localhost:8501/
 - Web app that iframes the NoVNC client and the Streamlit interfaces into one web page: http://localhost:8080/
 
-# Make it speak MCP
+## Make it speak MCP
 
 There are different approaches that could be taken:
 
@@ -75,7 +75,7 @@ Then you should be able to do computer use from Claude Desktop!
 
 You can open up [http://localhost:6080/vnc.html](http://localhost:6080/vnc.html) to follow along with what it's doing. Claude doesn't clean up the docker container after closing Claude desktop so you will need to `docker kill computer-user-mcp-server`.
 
-# Make it speak Playwright
+## Make it speak Playwright
 
 Anthropic's CU image uses Firefox, which unfortunately is hard to get working with Playwright ([Playwright requires a patched version of firefox](https://stackoverflow.com/questions/75090385/running-playwright-with-the-local-firefox)).
 
@@ -99,3 +99,12 @@ Connection closed
 ```
 
 Woo!
+
+## Make it speak puppeteer
+
+Puppeteer does webdriver BiDi so the proxy also will look for those kinds of requests and handle them. `src/scripts/puppeteer.ts` runs a basic test of that.
+
+## Record events
+
+`src/recorder` contains a chrome extension that loads rrweb and logs some events.
+TODO: load this in chromium in the docker image.

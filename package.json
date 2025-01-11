@@ -4,6 +4,7 @@
   "type": "module",
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/chrome": "^0.0.293",
     "@types/node": "^22.10.5",
     "@types/uuid": "^10.0.0",
     "@types/ws": "^8.5.13",
