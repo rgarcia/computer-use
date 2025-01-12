@@ -104,7 +104,7 @@ Woo!
 
 Puppeteer does webdriver BiDi so the proxy also will look for those kinds of requests and handle them. `src/scripts/puppeteer.ts` runs a basic test of that.
 
-## Record events
+## Record and replay events
 
 `src/recorder` contains a chrome extension that loads rrweb and logs some events.
-TODO: load this in chromium in the docker image.
+Build it with `bun run build:recorder`, which will create a `dist/recorder` directory you can load as an unpacked extension.
