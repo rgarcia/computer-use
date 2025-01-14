@@ -3,7 +3,9 @@
   "module": "index.ts",
   "type": "module",
   "scripts": {
-    "build:recorder": "mkdir -p dist/recorder && bun build ./src/recorder/background.ts --outdir=dist/recorder && bun build ./src/recorder/inject.ts --outdir=dist/recorder && cp ./src/recorder/manifest.json dist/recorder/"
+    "build:recorder": "mkdir -p dist/recorder && bun build ./src/recorder/background.ts --outdir=dist/recorder && bun build ./src/recorder/inject.ts --outdir=dist/recorder && cp ./src/recorder/manifest.json dist/recorder/",
+    "dev:viewer": "bun run src/viewer/server.ts",
+    "build:viewer": "mkdir -p dist/viewer && bun build --experimental-html --experimental-css ./src/viewer/index.html --outdir=dist/viewer"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -27,6 +29,7 @@
     "fastify": "^5.2.1",
     "pino-pretty": "^13.0.0",
     "rrweb": "^2.0.0-alpha.4",
+    "rrweb-player": "^1.0.0-alpha.4",
     "uuid": "^11.0.4",
     "ws": "^8.18.0"
   }

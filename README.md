@@ -106,5 +106,7 @@ Puppeteer does webdriver BiDi so the proxy also will look for those kinds of req
 
 ## Record and replay events
 
-`src/recorder` contains a chrome extension that loads rrweb and logs some events.
-Build it with `bun run build:recorder`, which will create a `dist/recorder` directory you can load as an unpacked extension.
+`src/recorder` contains a chrome extension that loads rrweb and captures events.
+Build it with `bun run build:recorder`, which will create a `dist/recorder` directory you can load manually as an unpacked extension in Chrome, or you can launch chromium with it via `chromium --load-extension=./dist/recorder`.
+
+`src/viewer` contains a simple app that (1) has an API endpoint to receive rrweb events and store them in memory, and (2) has a page that loads `rrweb-player` with those events.
